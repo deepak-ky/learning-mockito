@@ -3,6 +3,7 @@ package org.kd4.impl;
 import org.junit.Test;
 import org.kd4.service.TodoService;
 import org.kd4.service.TodoServiceStub;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 import java.util.Arrays;
@@ -65,5 +66,23 @@ public class TodoBusinessImplTest {
         verify(todoService, times(2)).deleteTodo("asdf"); // has deleteTodo("asdf") been called at exactly once
         //verify(todoService, never()).deleteTodo("asdf"); THIS WILL FAIL
         verify(todoService, never()).deleteTodo("spring");
+    }
+
+    @Test
+    public void testDeleteTodosNotRelatedToSpring_captureArgument(){
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class); // 1. declaring here
+        TodoService todoService = mock(TodoService.class);
+        when(todoService.retrieveTodos("deepak")).thenReturn(Arrays.asList("spring","asdf",";lkj","spring 1"));
+        TodoBusinessImpl todoBusinessImpl = new TodoBusinessImpl(todoService);
+
+        todoBusinessImpl.deleteTodosNotRelatedToSpring("deepak");
+
+        verify(todoService,times(2)).deleteTodo(argumentCaptor.capture()); // 2. capturing here
+        /*
+        If deleteTodo is only invoked once this can be written as :
+            verify(todoService).deleteTodo(argumentCaptor.capture());
+        */
+        assertEquals(";lkj", argumentCaptor.getValue()); // 3. checking single value (behaving as a stack)
+        assertEquals(Arrays.asList("asdf",";lkj"), argumentCaptor.getAllValues()); // 4. checking here
     }
 }
